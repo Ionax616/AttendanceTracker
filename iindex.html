@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roll Call — Attendance Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#14171C;
+    --paper-dark:#1C2027;
+    --ink:#EDE7D9;
+    --ink-soft:#8B94A0;
+    --rule:#333A44;
+    --red-pen:#E2705C;
+    --green-stamp:#6FBF8C;
+    --amber:#E0B84D;
+    --card:#1A1E25;
+    --present-bg:#233327;
+    --absent-bg:#3A2620;
+    --cancelled-bg:#262A31;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    background-image:
+      linear-gradient(var(--rule) 1px, transparent 1px);
+    background-size: 100% 2.1em;
+    color:var(--ink);
+    font-family:'Libre Baskerville', Georgia, serif;
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+  ::selection{background:var(--amber); color:var(--card);}
+
+  header{
+    padding:32px 20px 18px;
+    border-bottom:3px double var(--ink);
+    background:var(--paper);
+    position:relative;
+  }
+  .masthead{
+    max-width:900px;
+    margin:0 auto;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  .masthead h1{
+    font-family:'Special Elite', monospace;
+    font-size:clamp(28px,5vw,42px);
+    margin:0;
+    letter-spacing:0.5px;
+    color:var(--ink);
+  }
+  .masthead .sub{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    letter-spacing:2px;
+    text-transform:uppercase;
+    margin-top:4px;
+  }
+  .date-stamp{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    border:1.5px solid var(--ink-soft);
+    padding:6px 10px;
+    border-radius:2px;
+    transform:rotate(-2deg);
+    white-space:nowrap;
+  }
+
+  main{max-width:900px; margin:0 auto; padding:24px 20px;}
+
+  /* Course tabs (folder look) */
+  .tabs{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    margin-bottom:-1px;
+  }
+  .tab{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    padding:10px 16px;
+    background:var(--paper-dark);
+    border:1.5px solid var(--ink);
+    border-bottom:none;
+    border-radius:6px 6px 0 0;
+    cursor:pointer;
+    color:var(--ink-soft);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    position:relative;
+    top:1px;
+  }
+  .tab .dot{width:9px;height:9px;border-radius:50%; flex:none;}
+  .tab.active{
+    background:var(--card);
+    color:var(--ink);
+    font-weight:600;
+    top:0;
+    padding-top:11px;
+  }
+  .tab-add{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    padding:10px 14px;
+    background:transparent;
+    border:1.5px dashed var(--ink-soft);
+    border-radius:6px 6px 0 0;
+    cursor:pointer;
+    color:var(--ink-soft);
+  }
+  .tab-add:hover{color:var(--ink); border-color:var(--ink);}
+
+  .register{
+    background:var(--card);
+    border:1.5px solid var(--ink);
+    border-radius:0 8px 8px 8px;
+    padding:26px;
+    box-shadow:3px 4px 0 rgba(30,42,58,0.08);
+  }
+  .empty-state{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--ink-soft);
+  }
+  .empty-state h2{font-family:'Special Elite',monospace; font-weight:400; color:var(--ink);}
+  .btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    background:var(--ink);
+    color:var(--paper);
+    border:none;
+    padding:11px 20px;
+    border-radius:4px;
+    cursor:pointer;
+    letter-spacing:0.5px;
+  }
+  .btn:hover{background:#D8CFB8;}
+  .btn.secondary{background:transparent; color:var(--ink); border:1.5px solid var(--ink);}
+  .btn.danger{background:var(--red-pen); color:#fff;}
+
+  .course-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:20px;
+    flex-wrap:wrap;
+    padding-bottom:18px;
+    border-bottom:1.5px dashed var(--rule);
+    margin-bottom:20px;
+  }
+  .course-title{font-family:'Special Elite', monospace; font-size:22px; margin:0 0 4px;}
+  .course-meta{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-soft);}
+
+  .score-block{text-align:right; min-width:150px;}
+  .score-big{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:38px;
+    font-weight:600;
+    line-height:1;
+  }
+  .score-big.good{color:var(--green-stamp);}
+  .score-big.warn{color:var(--amber);}
+  .score-big.bad{color:var(--red-pen);}
+  .score-label{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); letter-spacing:1px; text-transform:uppercase;}
+
+  .bar-track{
+    width:100%;
+    height:8px;
+    background:var(--paper-dark);
+    border:1px solid var(--rule);
+    border-radius:4px;
+    overflow:hidden;
+    margin-top:8px;
+  }
+  .bar-fill{height:100%; transition:width .4s ease;}
+
+  .verdict{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    padding:12px 14px;
+    border-radius:4px;
+    margin-bottom:20px;
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    line-height:1.5;
+  }
+  .verdict.good{background:var(--present-bg); color:var(--green-stamp); border:1px solid #3A5240;}
+  .verdict.warn{background:#332B18; color:var(--amber); border:1px solid #524324;}
+  .verdict.bad{background:var(--absent-bg); color:var(--red-pen); border:1px solid #54362D;}
+
+  .section-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:22px 0 10px;
+  }
+
+  .due-list{display:flex; flex-direction:column; gap:8px;}
+  .due-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:10px 12px;
+    background:var(--paper);
+    border:1px solid var(--rule);
+    border-radius:5px;
+    flex-wrap:wrap;
+  }
+  .due-date{font-family:'IBM Plex Mono',monospace; font-size:13px;}
+  .due-day{color:var(--ink-soft); font-size:11px; margin-left:6px;}
+  .stamp-group{display:flex; gap:6px;}
+  .stamp-btn{
+    font-family:'Special Elite', monospace;
+    font-size:11px;
+    padding:7px 12px;
+    border-radius:4px;
+    border:1.5px solid transparent;
+    cursor:pointer;
+    background:var(--paper-dark);
+    color:var(--ink-soft);
+    transition:transform .08s ease;
+  }
+  .stamp-btn:hover{transform:scale(1.06);}
+  .stamp-btn:active{transform:scale(0.94) rotate(-3deg);}
+  .stamp-btn.present{border-color:var(--green-stamp);}
+  .stamp-btn.present.on{background:var(--green-stamp); color:#fff;}
+  .stamp-btn.absent{border-color:var(--red-pen);}
+  .stamp-btn.absent.on{background:var(--red-pen); color:#fff;}
+  .stamp-btn.cancelled{border-color:var(--ink-soft);}
+  .stamp-btn.cancelled.on{background:var(--ink-soft); color:#fff;}
+
+  .history{display:flex; flex-direction:column-reverse; gap:4px; max-height:260px; overflow-y:auto; padding-right:4px;}
+  .hist-row{
+    display:flex; justify-content:space-between; align-items:center;
+    font-family:'IBM Plex Mono',monospace; font-size:12.5px;
+    padding:7px 10px; border-bottom:1px dotted var(--rule);
+  }
+  .hist-status{
+    font-family:'Special Elite',monospace;
+    font-size:11px;
+    padding:2px 9px;
+    border-radius:3px;
+    letter-spacing:1px;
+  }
+  .hist-status.present{background:var(--present-bg); color:var(--green-stamp);}
+  .hist-status.absent{background:var(--absent-bg); color:var(--red-pen);}
+  .hist-status.cancelled{background:var(--cancelled-bg); color:var(--ink-soft);}
+  .hist-clear{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:11px;text-decoration:underline;}
+
+  .btn.small{padding:7px 12px; font-size:11.5px;}
+  .extra-row{margin-top:10px;}
+  .extra-form{
+    display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap;
+  }
+  .extra-form input[type=date]{
+    padding:8px 10px; border:1.5px solid var(--rule); border-radius:4px;
+    font-family:'IBM Plex Mono',monospace; font-size:12.5px; background:var(--paper); color:var(--ink);
+  }
+  .course-footer{
+    display:flex; justify-content:flex-end; margin-top:22px; padding-top:14px; border-top:1px dashed var(--rule);
+  }
+
+  /* Modal */
+  .overlay{
+    position:fixed; inset:0; background:rgba(20,25,35,0.55);
+    display:none; align-items:center; justify-content:center; padding:20px; z-index:50;
+  }
+  .overlay.show{display:flex;}
+  .modal{
+    background:var(--card); border:1.5px solid var(--ink); border-radius:8px;
+    max-width:420px; width:100%; padding:26px; box-shadow:4px 6px 0 rgba(30,42,58,0.15);
+  }
+  .modal h2{font-family:'Special Elite',monospace; font-weight:400; margin:0 0 18px; font-size:20px;}
+  .field{margin-bottom:16px;}
+  .field label{
+    display:block; font-family:'IBM Plex Mono',monospace; font-size:11px;
+    letter-spacing:1px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:6px;
+  }
+  .field input[type=text], .field input[type=number], .field input[type=date]{
+    width:100%; padding:9px 10px; border:1.5px solid var(--rule); border-radius:4px;
+    font-family:'Libre Baskerville',serif; font-size:14px; background:var(--paper); color:var(--ink);
+  }
+  .field input:focus{outline:2px solid var(--ink); outline-offset:1px;}
+  .day-toggles{display:flex; gap:6px; flex-wrap:wrap;}
+  .day-toggle{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; width:38px; height:38px;
+    border-radius:50%; border:1.5px solid var(--rule); background:var(--paper);
+    cursor:pointer; color:var(--ink-soft);
+  }
+  .day-toggle.on{background:var(--ink); color:var(--paper); border-color:var(--ink);}
+  .color-swatches{display:flex; gap:8px; flex-wrap:wrap;}
+  .swatch{width:28px; height:28px; border-radius:50%; cursor:pointer; border:2px solid transparent;}
+  .swatch.on{border-color:var(--ink); transform:scale(1.1);}
+  .modal-actions{display:flex; justify-content:space-between; gap:10px; margin-top:20px;}
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:var(--paper); font-family:'IBM Plex Mono',monospace; font-size:13px;
+    padding:11px 18px; border-radius:5px; opacity:0; pointer-events:none; transition:all .25s ease; z-index:100;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media (max-width:520px){
+    .register{padding:18px;}
+    .score-block{text-align:left; margin-top:6px;}
+    .course-head{flex-direction:column;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="masthead">
+    <div>
+      <h1>Roll Call</h1>
+      <div class="sub">Attendance Register</div>
+    </div>
+    <div class="date-stamp" id="todayStamp">—</div>
+  </div>
+</header>
+
+<main>
+  <div class="tabs" id="tabs"></div>
+  <div class="register" id="register"></div>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>New Course</h2>
+    <div class="field">
+      <label for="cName">Course name</label>
+      <input type="text" id="cName" placeholder="e.g. Organic Chemistry">
+    </div>
+    <div class="field">
+      <label>Meets on</label>
+      <div class="day-toggles" id="dayToggles"></div>
+    </div>
+    <div class="field">
+      <label for="cTarget">Attendance target (%)</label>
+      <input type="number" id="cTarget" value="75" min="1" max="100">
+    </div>
+    <div class="field">
+      <label for="cStart">Term start date</label>
+      <input type="date" id="cStart">
+    </div>
+    <div class="field">
+      <label>Colour</label>
+      <div class="color-swatches" id="colorSwatches"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="cancelModal">Cancel</button>
+      <button class="btn" id="saveCourse">Add course</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const COLORS = ['#6FBF8C','#E2705C','#E0B84D','#6FA3D6','#B98CE2','#4FBFB0',
+                 '#E28FB5','#8CA6E2','#C9A15C','#7ECF6B','#E28C4F','#9BA3AE'];
+let courses = [];
+let activeCourseId = null;
+let selectedDays = new Set();
+let selectedColor = COLORS[0];
+
+const $ = (id) => document.getElementById(id);
+
+function toast(msg){
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._h);
+  toast._h = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+function todayISO(){
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0,10);
+}
+
+function fmtDate(iso){
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'});
+}
+
+async function loadCourses(){
+  try{
+    const res = await window.storage.get('courses', false);
+    courses = res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){
+    courses = [];
+  }
+}
+
+async function saveCourses(){
+  try{
+    await window.storage.set('courses', JSON.stringify(courses), false);
+  }catch(e){
+    toast('Could not save — try again');
+  }
+}
+
+function expectedDates(course){
+  const out = [];
+  const start = new Date(course.startDate + 'T00:00:00');
+  const end = new Date(todayISO() + 'T00:00:00');
+  if(start > end) return out;
+  const cur = new Date(start);
+  while(cur <= end){
+    if(course.days.includes(cur.getDay())){
+      out.push(cur.toISOString().slice(0,10));
+    }
+    cur.setDate(cur.getDate()+1);
+  }
+  return out;
+}
+
+function allDates(course){
+  const set = new Set(expectedDates(course));
+  (course.extraDates || []).forEach(d => set.add(d));
+  return Array.from(set).sort();
+}
+
+function stats(course){
+  const dates = allDates(course);
+  let present=0, absent=0, cancelled=0, unmarked=0;
+  dates.forEach(d=>{
+    const s = course.sessions[d];
+    if(s==='present') present++;
+    else if(s==='absent') absent++;
+    else if(s==='cancelled') cancelled++;
+    else unmarked++;
+  });
+  const counted = present + absent;
+  const pct = counted === 0 ? 100 : Math.round((present/counted)*1000)/10;
+  return {present, absent, cancelled, unmarked, counted, pct, totalDates: dates.length, dates};
+}
+
+// Compute how many more must be attended in a row to hit target,
+// or how many more can be missed and still stay at/above target.
+function projection(course, st){
+  const target = course.target/100;
+  if(st.counted === 0) return {type:'none'};
+  if(st.pct/100 >= target){
+    // how many can they still miss (future absences) and stay >= target
+    // solve: present/(present+absent+x) >= target  => x <= present/target - present - absent
+    let x = Math.floor(st.present/target - st.present - st.absent);
+    if(x < 0) x = 0;
+    return {type:'safe', count:x};
+  } else {
+    // how many consecutive presents needed: (present+n)/(counted+n) >= target
+    // n >= (target*counted - present)/(1-target)
+    if(target >= 1) return {type:'need', count: Infinity};
+    let n = Math.ceil((target*st.counted - st.present)/(1-target));
+    if(n < 0) n = 0;
+    return {type:'need', count:n};
+  }
+}
+
+function renderTabs(){
+  const wrap = $('tabs');
+  wrap.innerHTML = '';
+  courses.forEach(c=>{
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (c.id===activeCourseId ? ' active':'');
+    tab.innerHTML = `<span class="dot" style="background:${c.color}"></span>${c.name}`;
+    tab.onclick = ()=>{ activeCourseId = c.id; render(); };
+    wrap.appendChild(tab);
+  });
+  const add = document.createElement('div');
+  add.className = 'tab-add';
+  add.textContent = '+ Add course';
+  add.onclick = openModal;
+  wrap.appendChild(add);
+}
+
+function renderRegister(){
+  const el = $('register');
+  if(courses.length === 0){
+    el.innerHTML = `<div class="empty-state">
+      <h2>No courses yet</h2>
+      <p>Add your first course and its weekly schedule to start taking roll.</p>
+      <button class="btn" id="emptyAdd">+ Add your first course</button>
+    </div>`;
+    $('emptyAdd').onclick = openModal;
+    return;
+  }
+  const course = courses.find(c=>c.id===activeCourseId) || courses[0];
+  activeCourseId = course.id;
+  const st = stats(course);
+  const proj = projection(course, st);
+
+  let scoreClass = 'good';
+  if(st.pct < course.target) scoreClass = 'bad';
+  else if(st.pct < course.target + 8) scoreClass = 'warn';
+
+  let verdictClass, verdictText;
+  if(st.counted === 0){
+    verdictClass = 'warn';
+    verdictText = 'No lectures marked yet. Log today\u2019s session below to start tracking.';
+  } else if(proj.type==='safe'){
+    verdictClass = 'good';
+    verdictText = proj.count > 0
+      ? `On track. You could miss ${proj.count} more lecture${proj.count===1?'':'s'} and stay at or above ${course.target}%.`
+      : `On track at exactly ${course.target}%. Any further absence will drop you below target.`;
+  } else {
+    verdictClass = 'bad';
+    verdictText = Number.isFinite(proj.count)
+      ? `Below target. Attend the next ${proj.count} lecture${proj.count===1?'':'s'} in a row to reach ${course.target}%.`
+      : `Target is 100% — every remaining lecture counts.`;
+  }
+
+  const dueDates = st.dates.filter(d => !course.sessions[d]);
+
+  el.innerHTML = `
+    <div class="course-head">
+      <div>
+        <div class="course-title">${course.name}</div>
+        <div class="course-meta">Meets ${course.days.map(d=>DAYS[d]).join(', ')} &nbsp;·&nbsp; since ${fmtDate(course.startDate)}</div>
+        <div class="extra-row">
+          <button class="btn secondary small" id="toggleExtra">+ Add extra lecture</button>
+          <div class="extra-form" id="extraForm" style="display:none;">
+            <input type="date" id="extraDate" value="${todayISO()}" max="${todayISO()}">
+            <button class="btn small" id="addExtraBtn">Add to register</button>
+          </div>
+        </div>
+      </div>
+      <div class="score-block">
+        <div class="score-big ${scoreClass}">${st.pct}%</div>
+        <div class="score-label">Target ${course.target}%</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.min(st.pct,100)}%; background:${scoreClass==='good'?'var(--green-stamp)':scoreClass==='warn'?'var(--amber)':'var(--red-pen)'}"></div></div>
+      </div>
+    </div>
+
+    <div class="verdict ${verdictClass}">${verdictText}</div>
+
+    ${dueDates.length ? `
+      <div class="section-label">Needs marking (${dueDates.length})</div>
+      <div class="due-list">
+        ${dueDates.map(d => dueRow(course, d)).join('')}
+      </div>
+    ` : `<div class="section-label">All caught up</div>`}
+
+    <div class="section-label">History (${st.present + st.absent + st.cancelled} logged)</div>
+    <div class="history">
+      ${st.dates.filter(d=>course.sessions[d]).map(d => histRow(course, d)).join('') || '<div class="due-row" style="justify-content:center;color:var(--ink-soft)">Nothing logged yet</div>'}
+    </div>
+
+    <div class="course-footer">
+      <button class="btn danger" id="deleteCourse">Remove course</button>
+    </div>
+  `;
+
+  document.querySelectorAll('[data-mark]').forEach(btn=>{
+    btn.onclick = () => markSession(course.id, btn.dataset.date, btn.dataset.mark);
+  });
+  document.querySelectorAll('[data-clear]').forEach(btn=>{
+    btn.onclick = () => markSession(course.id, btn.dataset.clear, null);
+  });
+  $('deleteCourse').onclick = () => removeCourse(course.id);
+  $('toggleExtra').onclick = () => {
+    const f = $('extraForm');
+    f.style.display = f.style.display === 'none' ? 'flex' : 'none';
+  };
+  $('addExtraBtn').onclick = () => addExtraDate(course.id, $('extraDate').value);
+}
+
+function addExtraDate(courseId, date){
+  if(!date) return;
+  const course = courses.find(c=>c.id===courseId);
+  if(!course) return;
+  if(!course.extraDates) course.extraDates = [];
+  if(course.extraDates.includes(date) || expectedDates(course).includes(date)){
+    toast('That date is already in the register');
+    return;
+  }
+  course.extraDates.push(date);
+  saveCourses();
+  render();
+  toast('Extra lecture added — mark it in "Needs marking"');
+}
+
+function dueRow(course, date){
+  const d = new Date(date+'T00:00:00');
+  const dayName = DAYS[d.getDay()];
+  return `<div class="due-row">
+    <div><span class="due-date">${fmtDate(date)}</span><span class="due-day">${dayName}</span></div>
+    <div class="stamp-group">
+      <button class="stamp-btn present" data-mark="present" data-date="${date}">PRESENT</button>
+      <button class="stamp-btn absent" data-mark="absent" data-date="${date}">ABSENT</button>
+      <button class="stamp-btn cancelled" data-mark="cancelled" data-date="${date}">CANCELLED</button>
+    </div>
+  </div>`;
+}
+
+function histRow(course, date){
+  const status = course.sessions[date];
+  return `<div class="hist-row">
+    <span>${fmtDate(date)}</span>
+    <span style="display:flex;align-items:center;gap:10px;">
+      <span class="hist-status ${status}">${status}</span>
+      <button class="hist-clear" data-clear="${date}">clear</button>
+    </span>
+  </div>`;
+}
+
+function markSession(courseId, date, status){
+  const course = courses.find(c=>c.id===courseId);
+  if(!course) return;
+  if(status===null){ delete course.sessions[date]; }
+  else { course.sessions[date] = status; }
+  saveCourses();
+  render();
+  if(status) toast(`${fmtDate(date)} marked ${status}`);
+}
+
+function removeCourse(id){
+  if(!confirm('Remove this course and all its attendance history?')) return;
+  courses = courses.filter(c=>c.id!==id);
+  if(activeCourseId===id) activeCourseId = courses[0]?.id ?? null;
+  saveCourses();
+  render();
+}
+
+function render(){
+  renderTabs();
+  renderRegister();
+}
+
+// ---- Modal ----
+function openModal(){
+  selectedDays = new Set();
+  selectedColor = COLORS[courses.length % COLORS.length];
+  $('cName').value = '';
+  $('cTarget').value = 75;
+  $('cStart').value = todayISO();
+  buildDayToggles();
+  buildColorSwatches();
+  $('overlay').classList.add('show');
+  $('cName').focus();
+}
+function closeModal(){ $('overlay').classList.remove('show'); }
+
+function buildDayToggles(){
+  const wrap = $('dayToggles');
+  wrap.innerHTML = '';
+  DAYS.forEach((d,i)=>{
+    const b = document.createElement('button');
+    b.type='button';
+    b.className='day-toggle';
+    b.textContent = d[0];
+    b.title = d;
+    b.onclick = ()=>{
+      if(selectedDays.has(i)) selectedDays.delete(i); else selectedDays.add(i);
+      b.classList.toggle('on');
+    };
+    wrap.appendChild(b);
+  });
+}
+function buildColorSwatches(){
+  const wrap = $('colorSwatches');
+  wrap.innerHTML = '';
+  COLORS.forEach(c=>{
+    const s = document.createElement('div');
+    s.className = 'swatch' + (c===selectedColor ? ' on':'');
+    s.style.background = c;
+    s.onclick = ()=>{
+      selectedColor = c;
+      document.querySelectorAll('.swatch').forEach(x=>x.classList.remove('on'));
+      s.classList.add('on');
+    };
+    wrap.appendChild(s);
+  });
+}
+
+$('cancelModal').onclick = closeModal;
+$('overlay').onclick = (e)=>{ if(e.target.id==='overlay') closeModal(); };
+
+$('saveCourse').onclick = async ()=>{
+  const name = $('cName').value.trim();
+  const target = Number($('cTarget').value) || 75;
+  const start = $('cStart').value || todayISO();
+  if(!name){ toast('Give the course a name'); return; }
+  if(selectedDays.size===0){ toast('Pick at least one weekday'); return; }
+  const course = {
+    id: 'c_' + Date.now(),
+    name, target, startDate: start,
+    days: Array.from(selectedDays).sort(),
+    color: selectedColor,
+    sessions: {},
+    extraDates: []
+  };
+  courses.push(course);
+  activeCourseId = course.id;
+  await saveCourses();
+  closeModal();
+  render();
+  toast('Course added');
+};
+
+// ---- Init ----
+(async function init(){
+  $('todayStamp').textContent = fmtDate(todayISO());
+  await loadCourses();
+  if(courses.length){ activeCourseId = courses[0].id; }
+  render();
+})();
+</script>
+</body>
+</html>
